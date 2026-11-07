@@ -10,13 +10,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: gioxx/theos:latest
+    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git ldid curl wget libxml2-utils
+
+      - name: Setup Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          
+          # Tải iOS SDK (cần thiết để biên dịch tweak iOS)
+          sudo mkdir -p $HOME/theos/sdks
+          git clone https://github.com/theos/sdks.git $HOME/theos/sdks_temp
+          mv $HOME/theos/sdks_temp/*.sdk $HOME/theos/sdks/
+          rm -rf $HOME/theos/sdks_temp
+
       - name: Build Package
+        env:
+          THEOS: ${{ github.home }}/theos
         run: |
           make package
 
