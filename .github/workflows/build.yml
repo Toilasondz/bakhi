@@ -22,13 +22,22 @@ jobs:
           sudo wget -O /usr/bin/ldid https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
           sudo chmod +x /usr/bin/ldid
 
-      - name: Setup Theos
+      - name: Setup Theos & Toolchain
         run: |
+          # 1. Tải Theos cốt lõi
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          
+          # 2. Tải iOS SDK
           sudo mkdir -p $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks_temp
           mv $HOME/theos/sdks_temp/*.sdk $HOME/theos/sdks/
           rm -rf $HOME/theos/sdks_temp
+
+          # 3. Tải Toolchain biên dịch cho Linux (Khắc phục triệt để lỗi thiếu clang)
+          curl -LO https://github.com/theos/toolchain/releases/download/v1.0.0/linux-arm64-toolchain.tar.xz
+          mkdir -p $HOME/theos/toolchain/linux/iphone
+          tar -xf linux-arm64-toolchain.tar.xz -C $HOME/theos/toolchain/linux/iphone
+          rm linux-arm64-toolchain.tar.xz
 
       - name: Build Package
         run: |
