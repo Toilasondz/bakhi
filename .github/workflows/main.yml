@@ -1,0 +1,54 @@
+name: Build VideoStarTool Tweak
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies & Compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git curl wget libxml2-utils clang lldb llvm
+          
+          # Tải và cài đặt ldid thủ công
+          sudo wget -O /usr/bin/ldid https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
+          sudo chmod +x /usr/bin/ldid
+
+      - name: Setup Theos & Toolchain Symlinks
+        run: |
+          # 1. Tải Theos cốt lõi
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          
+          # 2. Tải iOS SDK
+          sudo mkdir -p $HOME/theos/sdks
+          git clone https://github.com/theos/sdks.git $HOME/theos/sdks_temp
+          mv $HOME/theos/sdks_temp/*.sdk $HOME/theos/sdks/
+          rm -rf $HOME/theos/sdks_temp
+
+          # 3. Tạo cấu trúc thư mục toolchain và liên kết clang hệ thống vào cho Theos dùng
+          mkdir -p $HOME/theos/toolchain/linux/iphone/bin
+          ln -s /usr/bin/clang $HOME/theos/toolchain/linux/iphone/bin/clang
+          ln -s /usr/bin/clang++ $HOME/theos/toolchain/linux/iphone/bin/clang++
+          ln -s /usr/bin/llvm-strip $HOME/theos/toolchain/linux/iphone/bin/strip
+          ln -s /usr/bin/ar $HOME/theos/toolchain/linux/iphone/bin/ar
+
+      - name: Build Package
+        run: |
+          export THEOS=$HOME/theos
+          make package
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VideoStarTool-deb
+          path: packages/*.deb
