@@ -18,13 +18,17 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git ldid curl wget libxml2-utils
+          sudo apt-get install -y build-essential git curl wget libxml2-utils
+          
+          # Tải và cài đặt ldid thủ công vì Ubuntu apt không có sẵn
+          sudo wget -O /usr/bin/ldid https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
+          sudo chmod +x /usr/bin/ldid
 
       - name: Setup Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
           
-          # Tải iOS SDK (cần thiết để biên dịch tweak iOS)
+          # Tải iOS SDK
           sudo mkdir -p $HOME/theos/sdks
           git clone https://github.com/theos/sdks.git $HOME/theos/sdks_temp
           mv $HOME/theos/sdks_temp/*.sdk $HOME/theos/sdks/
