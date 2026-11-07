@@ -15,16 +15,16 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Dependencies & Compiler
+      - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git curl wget libxml2-utils clang lldb llvm
+          sudo apt-get install -y build-essential git curl wget libxml2-utils xz-utils
           
           # Tải và cài đặt ldid thủ công
           sudo wget -O /usr/bin/ldid https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
           sudo chmod +x /usr/bin/ldid
 
-      - name: Setup Theos & Toolchain Symlinks
+      - name: Setup Theos & Official Linux Toolchain
         run: |
           # 1. Tải Theos cốt lõi
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
@@ -35,12 +35,15 @@ jobs:
           mv $HOME/theos/sdks_temp/*.sdk $HOME/theos/sdks/
           rm -rf $HOME/theos/sdks_temp
 
-          # 3. Tạo cấu trúc thư mục toolchain và liên kết clang hệ thống vào cho Theos dùng
-          mkdir -p $HOME/theos/toolchain/linux/iphone/bin
-          ln -s /usr/bin/clang $HOME/theos/toolchain/linux/iphone/bin/clang
-          ln -s /usr/bin/clang++ $HOME/theos/toolchain/linux/iphone/bin/clang++
-          ln -s /usr/bin/llvm-strip $HOME/theos/toolchain/linux/iphone/bin/strip
-          ln -s /usr/bin/ar $HOME/theos/toolchain/linux/iphone/bin/ar
+          # 3. Tải bộ toolchain Linux chuẩn của Theos (hỗ trợ cross-compile arm64/arm64e iOS)
+          mkdir -p $HOME/theos/toolchain/linux/iphone
+          curl -L -o toolchain.tar.zst https://github.com/theos/toolchain/releases/download/llvm-16.0.6-2/linux-amd64.tar.zst || \
+          curl -L -o toolchain.tar.zst https://github.com/theos/toolchain/releases/latest/download/linux-amd64.tar.zst
+          
+          # Cài đặt công cụ giải nén zstd nếu chưa có và giải nén toolchain
+          sudo apt-get install -y zstd
+          tar --use-compress-program=unzstd -xf toolchain.tar.zst -C $HOME/theos/toolchain/linux/iphone
+          rm toolchain.tar.zst
 
       - name: Build Package
         run: |
